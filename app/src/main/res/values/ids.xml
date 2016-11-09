@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="container">false</item>
+    <item type="id" name="text_status">false</item>
+    <item type="id" name="fragment">false</item>
+    <item type="id" name="linearLayout">false</item>
+    <item type="id" name="gesturePad">false</item>
+    <item type="id" name="button_left">false</item>
+    <item type="id" name="button_right">false</item>
+    <item type="id" name="textView2">false</item>
+    <item type="id" name="textView3">false</item>
+    <item type="id" name="textView4">false</item>
+    <item type="id" name="textView5">false</item>
+    <item type="id" name="action_settings">false</item>
+</resources>
