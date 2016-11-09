@@ -86,7 +86,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
         return d.getValue() != null && (d.getValue()[0] & MASK_NOTIFICATION) == MASK_NOTIFICATION;
     }
 
-    public BluetoothGattCharacteristic getNotification() {
+    BluetoothGattCharacteristic getNotification() {
         int mode = mProtocolMode.getIntValue(17, 0);
         mMouseInputReport.setValue(mBootMouseReport.getRawValue());
         if (mode == PROTOCOL_MODE_BOOT && isNotifEnabled(mBootMouseInputReportConfig)) {

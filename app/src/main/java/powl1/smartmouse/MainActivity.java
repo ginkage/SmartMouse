@@ -18,14 +18,6 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    protected void onResume() {
-        super.onResume();
-    }
-
-    protected void onPause() {
-        super.onPause();
-    }
-
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
