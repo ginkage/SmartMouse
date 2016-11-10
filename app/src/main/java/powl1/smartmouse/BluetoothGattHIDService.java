@@ -85,7 +85,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x05, (byte) 0x01, // Usage Page (Generic Desktop)
             (byte) 0x09, (byte) 0x02, // Usage (Mouse)
             (byte) 0xA1, (byte) 0x01, // Collection (Application)
-//            (byte) 0x85, (byte) 0x01, //    Report ID 01
+            (byte) 0x85, (byte) 0x01, //    Report ID 01
             (byte) 0x09, (byte) 0x01, //    Usage (Pointer)
             (byte) 0xA1, (byte) 0x00, //    Collection (Physical)
             (byte) 0x05, (byte) 0x09, //       Usage Page (Buttons)
@@ -110,35 +110,9 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x81, (byte) 0x06, //       Input (Data, Variable, Relative)
             (byte) 0xC0,              //    End Collection
             (byte) 0xC0,              // End Collection
-/*
-            (byte) 0x05, (byte) 0x01, // Usage page (Generic Desktop)
-            (byte) 0x09, (byte) 0x06, // Usage (Keyboard)
-            (byte) 0xA1, (byte) 0x01, // Collection (Application)
-            (byte) 0x85, (byte) 0x02, //    Report ID 02
-            (byte) 0x05, (byte) 0x07, //       Usage page (Key Codes)
-            (byte) 0x19, (byte) 0xE0, //       Usage minimum (224)
-            (byte) 0x29, (byte) 0xE7, //       Usage maximum (231)
-            (byte) 0x15, (byte) 0x00, //       Logical minimum (0)
-            (byte) 0x25, (byte) 0x01, //       Logical maximum (1)
-            (byte) 0x75, (byte) 0x01, //       Report size (1)
-            (byte) 0x95, (byte) 0x08, //       Report count (8)
-            (byte) 0x81, (byte) 0x02, //       Input (Data, Variable, Absolute) ; Modifier byte
-            (byte) 0x75, (byte) 0x08, //       Report size (8)
-            (byte) 0x95, (byte) 0x01, //       Report count (1)
-            (byte) 0x81, (byte) 0x01, //       Input (Constant)                 ; Reserved byte
-            (byte) 0x75, (byte) 0x08, //       Report size (8)
-            (byte) 0x95, (byte) 0x06, //       Report count (6)
-            (byte) 0x15, (byte) 0x00, //       Logical Minimum (0)
-            (byte) 0x25, (byte) 0x65, //       Logical Maximum (101)
-            (byte) 0x05, (byte) 0x07, //       Usage page (Key Codes)
-            (byte) 0x19, (byte) 0x00, //       Usage Minimum (0)
-            (byte) 0x29, (byte) 0x65, //       Usage Maximum (101)
-            (byte) 0x81, (byte) 0x00, //       Input (Data, Array)              ; Key array (6 keys)
-            (byte) 0xC0               // End Collection
-*/
     };
 
-    private static final byte[] REPORT_REF_MOUSE = { (byte) 0, (byte) 1 };
+    private static final byte[] REPORT_REF_MOUSE = { (byte) 1, (byte) 1 };
 
     private static final byte[] HID_INFO = {
             0x13, 0x02, // Version number of base USB HID Specification.
@@ -188,10 +162,10 @@ class BluetoothGattHIDService extends BluetoothGattService {
 
     void setButton(int id, boolean value) {
         switch (id) {
-            case 0 /*0*/:
+            case 0:
                 mBootMouseReport.setButton1(value);
                 break;
-            case 1 /*1*/:
+            case 1:
                 mBootMouseReport.setButton2(value);
                 break;
             case 2:

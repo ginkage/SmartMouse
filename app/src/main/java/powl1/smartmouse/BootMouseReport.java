@@ -18,7 +18,7 @@ class BootMouseReport {
         if (button3) {
             button |= 4;
         }
-        return new byte[] { (byte) button, (byte) xDisplacement, (byte) yDisplacement, 0, 0 };
+        return new byte[] { (byte) button, (byte) xDisplacement, (byte) yDisplacement, 0 };
     }
 
     void setButton1(boolean button1) {
