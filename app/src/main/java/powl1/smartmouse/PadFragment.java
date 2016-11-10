@@ -20,13 +20,11 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 
-import powl1.smartmouse.MouseServerService.MouseServerBinder;
-
 public class PadFragment extends Fragment implements OnGestureListener {
     private static final String TAG = PadFragment.class.getSimpleName();
+
     private OnTouchListener bLeftListener;
     private GestureOverlayView gTouch;
-    final Handler handler;
     private boolean mCancelClick;
     private ServiceConnection mConnection;
     private Context mContext;
@@ -36,10 +34,11 @@ public class PadFragment extends Fragment implements OnGestureListener {
     private float mX;
     private float mY;
     private BroadcastReceiver stateReceiver;
-    Runnable timerTask;
+    private Runnable timerTask;
+
+    private final Handler handler = new Handler();
 
     public PadFragment() {
-        handler = new Handler();
         stateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -52,9 +51,9 @@ public class PadFragment extends Fragment implements OnGestureListener {
                 if (mMouseService == null) {
                     Log.e(PadFragment.TAG, "Not connected to Mouse Server");
                 } else {
-                    if (event.getAction() == 0) {
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
                         mMouseService.setButtonLeft(true);
-                    } else if (event.getAction() == 1) {
+                    } else if (event.getAction() == MotionEvent.ACTION_UP) {
                         mMouseService.setButtonLeft(false);
                     }
                     updateView();
@@ -75,7 +74,7 @@ public class PadFragment extends Fragment implements OnGestureListener {
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName componentName, IBinder service) {
-                mMouseService = ((MouseServerBinder) service).getService();
+                mMouseService = ((MouseServerService.MouseServerBinder) service).getService();
                 updateView();
             }
 
@@ -87,6 +86,7 @@ public class PadFragment extends Fragment implements OnGestureListener {
         };
     }
 
+    @Override
     public void onStop() {
         if (mConnection != null) {
             mContext.unbindService(mConnection);
@@ -95,14 +95,19 @@ public class PadFragment extends Fragment implements OnGestureListener {
         super.onStop();
     }
 
+    @Override
     public void onStart() {
         mContext = getActivity();
-        mContext.bindService(new Intent(mContext, MouseServerService.class), mConnection, Context.BIND_AUTO_CREATE);
-        mContext.registerReceiver(stateReceiver, new IntentFilter(MouseServerService.STATE_CHANGED));
+        mContext.bindService(new Intent(mContext, MouseServerService.class),
+                mConnection, Context.BIND_AUTO_CREATE);
+        mContext.registerReceiver(stateReceiver,
+                new IntentFilter(MouseServerService.STATE_CHANGED));
         super.onStart();
     }
 
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    @Override
+    public View onCreateView(
+            LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         rootView.findViewById(R.id.button_left).setOnTouchListener(bLeftListener);
         gTouch = (GestureOverlayView) rootView.findViewById(R.id.gesturePad);
@@ -133,8 +138,9 @@ public class PadFragment extends Fragment implements OnGestureListener {
         }
     }
 
+    @Override
     public void onGestureStarted(GestureOverlayView overlay, MotionEvent event) {
-        if (event.getAction() == 0) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
             mX = event.getX();
             mY = event.getY();
             mDownTimeStamp = event.getEventTime();
@@ -143,6 +149,7 @@ public class PadFragment extends Fragment implements OnGestureListener {
         }
     }
 
+    @Override
     public void onGesture(GestureOverlayView overlay, MotionEvent event) {
         if (event.getAction() == 2 && mMouseService != null) {
             mMouseService.moveXY(event.getX() - mX, event.getY() - mY);
@@ -153,8 +160,9 @@ public class PadFragment extends Fragment implements OnGestureListener {
         }
     }
 
+    @Override
     public void onGestureEnded(GestureOverlayView overlay, MotionEvent event) {
-        if (event.getAction() == 1) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
             handler.removeCallbacks(timerTask);
             if (!mCancelClick && event.getEventTime() - mDownTimeStamp < 500) {
                 mMouseService.setButtonLeft(true);
@@ -167,6 +175,7 @@ public class PadFragment extends Fragment implements OnGestureListener {
         }
     }
 
+    @Override
     public void onGestureCancelled(GestureOverlayView overlay, MotionEvent event) {
     }
 }

@@ -10,18 +10,18 @@ class BootMouseReport {
     byte[] getRawValue() {
         byte[] value = new byte[4];
         int button = 0;
-        if (this.button1) {
+        if (button1) {
             button |= 1;
         }
-        if (this.button2) {
+        if (button2) {
             button |= 2;
         }
-        if (this.button3) {
+        if (button3) {
             button |= 4;
         }
         value[0] = (byte) button;
-        value[1] = (byte) this.xDisplacement;
-        value[2] = (byte) this.yDisplacement;
+        value[1] = (byte) xDisplacement;
+        value[2] = (byte) yDisplacement;
         return value;
     }
 

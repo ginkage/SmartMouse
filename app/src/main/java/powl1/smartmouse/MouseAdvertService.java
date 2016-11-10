@@ -4,7 +4,6 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertiseData.Builder;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.BroadcastReceiver;
@@ -14,53 +13,50 @@ import android.content.IntentFilter;
 import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.util.Log;
-import java.util.UUID;
 
 public class MouseAdvertService extends Service {
     private static final String TAG = MouseAdvertService.class.getSimpleName();
+
     private AdvertiseCallback mAdvertiseCallback;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
-    private final BroadcastReceiver mReceiver;
     private String mSavedName;
 
-    private class MouseAdvertiseCallback extends AdvertiseCallback {
-        private MouseAdvertiseCallback() {
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
+                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+                if (state == BluetoothAdapter.STATE_OFF
+                        || state == BluetoothAdapter.STATE_TURNING_OFF) {
+                    Log.e(TAG, "Bluetooth disabled during advertising, stop");
+                    stopSelf();
+                }
+            }
         }
+    };
 
+    private class MouseAdvertiseCallback extends AdvertiseCallback {
+        @Override
         public void onStartFailure(int errorCode) {
-            Log.e(MouseAdvertService.TAG, "Unable to Start LE Advertisement");
+            Log.e(TAG, "Unable to Start LE Advertisement");
             stopSelf();
         }
 
+        @Override
         public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         }
     }
 
-    public MouseAdvertService() {
-        mReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if ("android.bluetooth.adapter.action.STATE_CHANGED".equals(intent.getAction())) {
-                    int state = intent.getIntExtra("android.bluetooth.adapter.extra.STATE", -1);
-                    if (state == 10 || state == 13) {
-                        Log.e(MouseAdvertService.TAG, "Bluetooth disabled during advertising, stop");
-                        stopSelf();
-                    }
-                }
-            }
-        };
-    }
-
+    @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
+    @Override
     public void onCreate() {
         super.onCreate();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("android.bluetooth.adapter.action.STATE_CHANGED");
-        registerReceiver(mReceiver, filter);
+        registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mBluetoothAdapter == null) {
             Log.e(TAG, "Unable to retrieve Bluetooth Adapter");
@@ -76,6 +72,7 @@ public class MouseAdvertService extends Service {
         }
     }
 
+    @Override
     public void onDestroy() {
         stopAdvertising();
         try {
@@ -87,8 +84,6 @@ public class MouseAdvertService extends Service {
     }
 
     private boolean startAdvertising() {
-        Builder dataBuilder = new Builder();
-        AdvertiseSettings.Builder settingBuilder = new AdvertiseSettings.Builder();
         if (mBluetoothAdapter == null) {
             Log.e(TAG, "No Bluetooth Adapter");
             return false;
@@ -104,15 +99,16 @@ public class MouseAdvertService extends Service {
         } else {
             mSavedName = mBluetoothAdapter.getName();
             mBluetoothAdapter.setName("MyHID");
-            settingBuilder.setAdvertiseMode(1);
-            settingBuilder.setTimeout(0);
-            AdvertiseSettings settings = settingBuilder.build();
-            settingBuilder.setConnectable(true);
-            UUID hidServiceUUID = UUID.fromString("00001812-0000-1000-8000-00805f9b34fb");
-            dataBuilder.setIncludeDeviceName(true);
-            dataBuilder.setIncludeTxPowerLevel(true);
-            dataBuilder.addServiceUuid(new ParcelUuid(hidServiceUUID));
-            AdvertiseData data = dataBuilder.build();
+            AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                    .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+                    .setTimeout(0)
+//                    .setConnectable(true)
+                    .build();
+            AdvertiseData data = new AdvertiseData.Builder()
+                    .setIncludeDeviceName(true)
+                    .setIncludeTxPowerLevel(true)
+                    .addServiceUuid(new ParcelUuid(BluetoothGattHIDService.HIDServiceUUID))
+                    .build();
             mAdvertiseCallback = new MouseAdvertiseCallback();
             mBluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback);
             return true;

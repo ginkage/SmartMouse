@@ -2,12 +2,14 @@ package powl1.smartmouse;
 
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -18,15 +20,15 @@ import java.util.Arrays;
 
 public class MouseServerService extends Service {
     private static final boolean DBG = false;
-    public static String STATE_CHANGED = "com.powl1.smartmouse.STATE_CHANGED";
     private static final String TAG = MouseServerService.class.getSimpleName();
+
+    public static final String STATE_CHANGED = "com.powl1.smartmouse.STATE_CHANGED";
+
     private BluetoothGattBatteryService mBatteryService;
-    private final IBinder mBinder;
     private BluetoothGattServer mBluetoothGattServer;
     private BluetoothManager mBluetoothManager;
     private BluetoothDevice mConnectedDevice;
     private BluetoothGattDeviceInformationService mDevInfoService;
-    private final BluetoothGattServerCallback mGattServerCallback;
     private BluetoothGattHIDService mHIDService;
     private double mSensitivity;
 
@@ -36,70 +38,116 @@ public class MouseServerService extends Service {
         }
     }
 
+    private final IBinder mBinder = new MouseServerBinder();
+
+    private final BluetoothGattServerCallback mGattServerCallback =
+            new BluetoothGattServerCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                mConnectedDevice = device;
+            } else if (device == mConnectedDevice
+                    || newState == BluetoothProfile.STATE_DISCONNECTED) {
+                mConnectedDevice = null;
+            }
+            sendStateChanged();
+            super.onConnectionStateChange(device, status, newState);
+
+            Log.d(TAG, "onConnectionStateChange() called with: device = [" + device
+                    + "], status = [" + status + "], newState = [" + newState + "]");
+        }
+
+        @Override
+        public void onServiceAdded(int status, BluetoothGattService service) {
+            super.onServiceAdded(status, service);
+
+            Log.d(TAG, "onServiceAdded() called with: status = [" + status
+                    + "], service = [" + service + "]");
+        }
+
+        @Override
+        public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
+                                                BluetoothGattCharacteristic characteristic) {
+            byte[] value = characteristic.getValue();
+            mBluetoothGattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, offset,
+                    offset != 0 ? Arrays.copyOfRange(value, offset, value.length) : value);
+            super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
+
+            Log.d(TAG, "onCharacteristicReadRequest() called with: device = [" + device
+                    + "], requestId = [" + requestId + "], offset = [" + offset
+                    + "], characteristic = [" + characteristic.getUuid() + "]");
+        }
+
+        @Override
+        public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId,
+                                                 BluetoothGattCharacteristic characteristic,
+                                                 boolean preparedWrite, boolean responseNeeded,
+                                                 int offset, byte[] value) {
+            characteristic.setValue(value);
+            mBluetoothGattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite,
+                    responseNeeded, offset, value);
+
+            Log.d(TAG, "onCharacteristicWriteRequest() called with: device = [" + device
+                    + "], requestId = [" + requestId + "], characteristic = ["
+                    + characteristic.getUuid() + "], preparedWrite = [" + preparedWrite
+                    + "], responseNeeded = [" + responseNeeded + "], offset = [" + offset
+                    + "], value = [" + value[0] + "]");
+        }
+
+        @Override
+        public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
+                                            BluetoothGattDescriptor descriptor) {
+            mBluetoothGattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, offset, descriptor.getValue());
+            super.onDescriptorReadRequest(device, requestId, offset, descriptor);
+
+            Log.d(TAG, "onDescriptorReadRequest() called with: device = [" + device
+                    + "], requestId = [" + requestId + "], offset = [" + offset
+                    + "], descriptor = [" + descriptor.getUuid() + "] (characteristic = ["
+                    + descriptor.getCharacteristic().getUuid() + "])");
+        }
+
+        @Override
+        public void onDescriptorWriteRequest(BluetoothDevice device, int requestId,
+                                             BluetoothGattDescriptor descriptor,
+                                             boolean preparedWrite, boolean responseNeeded,
+                                             int offset, byte[] value) {
+            descriptor.setValue(value);
+            mBluetoothGattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, offset, null);
+            super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite,
+                    responseNeeded, offset, value);
+
+            Log.d(TAG, "onDescriptorWriteRequest() called with: device = [" + device
+                    + "], requestId = [" + requestId + "], descriptor = [" + descriptor.getUuid()
+                    + "], preparedWrite = [" + preparedWrite + "], responseNeeded = ["
+                    + responseNeeded + "], offset = [" + offset + "], value = [" + value[0]
+                    + "] (characteristic = [" + descriptor.getCharacteristic().getUuid() + "])");
+        }
+
+        @Override
+        public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
+            mBluetoothGattServer.sendResponse(
+                    device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+            super.onExecuteWrite(device, requestId, execute);
+
+            Log.d(TAG, "onExecuteWrite() called with: device = [" + device + "], requestId = [" + requestId + "], execute = [" + execute + "]");
+        }
+    };
+
     public MouseServerService() {
         mSensitivity = 1.5d;
-        mGattServerCallback = new BluetoothGattServerCallback() {
-            @Override
-            public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-                if (newState == 2) {
-                    mConnectedDevice = device;
-                } else if (device == mConnectedDevice || newState == 0) {
-                    mConnectedDevice = null;
-                }
-                sendStateChanged();
-                super.onConnectionStateChange(device, status, newState);
-            }
-
-            @Override
-            public void onServiceAdded(int status, BluetoothGattService service) {
-                super.onServiceAdded(status, service);
-            }
-
-            @Override
-            public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic) {
-                byte[] value;
-                if (offset != 0) {
-                    value = Arrays.copyOfRange(characteristic.getValue(), offset, characteristic.getValue().length);
-                } else {
-                    value = characteristic.getValue();
-                }
-                mBluetoothGattServer.sendResponse(device, requestId, 0, offset, value);
-                super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-            }
-
-            @Override
-            public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
-                characteristic.setValue(value);
-                mBluetoothGattServer.sendResponse(device, requestId, 0, offset, null);
-                super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-            }
-
-            @Override
-            public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattDescriptor descriptor) {
-                mBluetoothGattServer.sendResponse(device, requestId, 0, offset, descriptor.getValue());
-                super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-            }
-
-            @Override
-            public void onDescriptorWriteRequest(BluetoothDevice device, int requestId, BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
-                descriptor.setValue(value);
-                mBluetoothGattServer.sendResponse(device, requestId, 0, offset, null);
-                super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-            }
-
-            @Override
-            public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
-                mBluetoothGattServer.sendResponse(device, requestId, 0, 0, null);
-                super.onExecuteWrite(device, requestId, execute);
-            }
-        };
-        mBinder = new MouseServerBinder();
     }
 
+    @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
     }
 
+    @Override
     public void onCreate() {
         mBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         if (mBluetoothManager == null) {
@@ -206,7 +254,9 @@ public class MouseServerService extends Service {
             Log.e(TAG, "no HID Service");
             return;
         }
-        mHIDService.setXYDisplacement((int) (((double) dX) * mSensitivity), (int) (((double) dY) * mSensitivity));
+        mHIDService.setXYDisplacement(
+                (int) (((double) dX) * mSensitivity),
+                (int) (((double) dY) * mSensitivity));
         processNotification();
         mHIDService.setXYDisplacement(0, 0);
     }
