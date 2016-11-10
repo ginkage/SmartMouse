@@ -103,7 +103,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x15, (byte) 0x81, //       Logical minimum (-127)
             (byte) 0x25, (byte) 0x7F, //       Logical maximum (127)
             (byte) 0x75, (byte) 0x08, //       Report size (8)
-            (byte) 0x95, (byte) 0x02, //       Report count (3)
+            (byte) 0x95, (byte) 0x02, //       Report count (2)
             (byte) 0x81, (byte) 0x06, //       Input (Data, Variable, Relative)
             (byte) 0xC0,              //    End Collection
             (byte) 0xC0               // End Collection
