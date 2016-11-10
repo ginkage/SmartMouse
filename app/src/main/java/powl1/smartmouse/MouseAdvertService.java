@@ -102,7 +102,7 @@ public class MouseAdvertService extends Service {
             AdvertiseSettings settings = new AdvertiseSettings.Builder()
                     .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
                     .setTimeout(0)
-//                    .setConnectable(true)
+                    .setConnectable(true)
                     .build();
             AdvertiseData data = new AdvertiseData.Builder()
                     .setIncludeDeviceName(true)

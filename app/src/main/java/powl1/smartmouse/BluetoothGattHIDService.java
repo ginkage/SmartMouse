@@ -11,7 +11,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
     private static final int PROTOCOL_MODE_DEFAULT = 1;
     private static final int PROTOCOL_MODE_REPORT = 1;
 
-    public static final UUID HIDServiceUUID =
+    static final UUID HIDServiceUUID =
             UUID.fromString("00001812-0000-1000-8000-00805f9b34fb");
 
     private static final UUID ProtocolModeUUID =
@@ -96,7 +96,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x81, (byte) 0x02, //       Input (Data, Variable, Absolute)
             (byte) 0x95, (byte) 0x01, //       Report count (1)
             (byte) 0x75, (byte) 0x05, //       Report size (5)
-            (byte) 0x81, (byte) 0x03, //       Input (constant)                 ; 5 bit padding
+            (byte) 0x81, (byte) 0x03, //       Input (Constant, Variable, Absolute) ; 5 bit padding
             (byte) 0x05, (byte) 0x01, //       Usage page (Generic Desktop)
             (byte) 0x09, (byte) 0x30, //       Usage (X)
             (byte) 0x09, (byte) 0x31, //       Usage (Y)
@@ -138,7 +138,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
         mReportMap.setValue(MOUSE_REPORT_MAP_DESCRIPTOR);
         addCharacteristic(mReportMap);
 
-        mBootMouseInputReportConfig.setValue(DESCRIPTOR_CONFIG_NOTIFY); // mMouseInputReportConfig ?
+        mMouseInputReportConfig.setValue(DESCRIPTOR_CONFIG_NOTIFY);
         mMouseInputReport.addDescriptor(mMouseInputReportConfig);
         mMouseInputReportRef.setValue(REPORT_REF_MOUSE);
         mMouseInputReport.addDescriptor(mMouseInputReportRef);
