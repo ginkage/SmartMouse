@@ -8,7 +8,6 @@ class BootMouseReport {
     private int yDisplacement;
 
     byte[] getRawValue() {
-        byte[] value = new byte[4];
         int button = 0;
         if (button1) {
             button |= 1;
@@ -19,10 +18,7 @@ class BootMouseReport {
         if (button3) {
             button |= 4;
         }
-        value[0] = (byte) button;
-        value[1] = (byte) xDisplacement;
-        value[2] = (byte) yDisplacement;
-        return value;
+        return new byte[] { (byte) button, (byte) xDisplacement, (byte) yDisplacement, 0, 0 };
     }
 
     void setButton1(boolean button1) {

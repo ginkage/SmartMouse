@@ -3,6 +3,7 @@ package powl1.smartmouse;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+
 import java.util.UUID;
 
 class BluetoothGattHIDService extends BluetoothGattService {
@@ -84,6 +85,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x05, (byte) 0x01, // Usage Page (Generic Desktop)
             (byte) 0x09, (byte) 0x02, // Usage (Mouse)
             (byte) 0xA1, (byte) 0x01, // Collection (Application)
+//            (byte) 0x85, (byte) 0x01, //    Report ID 01
             (byte) 0x09, (byte) 0x01, //    Usage (Pointer)
             (byte) 0xA1, (byte) 0x00, //    Collection (Physical)
             (byte) 0x05, (byte) 0x09, //       Usage Page (Buttons)
@@ -91,22 +93,49 @@ class BluetoothGattHIDService extends BluetoothGattService {
             (byte) 0x29, (byte) 0x03, //       Usage maximum (3)
             (byte) 0x15, (byte) 0x00, //       Logical minimum (0)
             (byte) 0x25, (byte) 0x01, //       Logical maximum (1)
-            (byte) 0x95, (byte) 0x03, //       Report count (3)
             (byte) 0x75, (byte) 0x01, //       Report size (1)
+            (byte) 0x95, (byte) 0x03, //       Report count (3)
             (byte) 0x81, (byte) 0x02, //       Input (Data, Variable, Absolute)
-            (byte) 0x95, (byte) 0x01, //       Report count (1)
             (byte) 0x75, (byte) 0x05, //       Report size (5)
-            (byte) 0x81, (byte) 0x03, //       Input (Constant, Variable, Absolute) ; 5 bit padding
+            (byte) 0x95, (byte) 0x01, //       Report count (1)
+            (byte) 0x81, (byte) 0x01, //       Input (Constant)                 ; 5 bit padding
             (byte) 0x05, (byte) 0x01, //       Usage page (Generic Desktop)
             (byte) 0x09, (byte) 0x30, //       Usage (X)
             (byte) 0x09, (byte) 0x31, //       Usage (Y)
+            (byte) 0x09, (byte) 0x38, //       Usage (Wheel)
             (byte) 0x15, (byte) 0x81, //       Logical minimum (-127)
             (byte) 0x25, (byte) 0x7F, //       Logical maximum (127)
             (byte) 0x75, (byte) 0x08, //       Report size (8)
-            (byte) 0x95, (byte) 0x02, //       Report count (2)
+            (byte) 0x95, (byte) 0x03, //       Report count (3)
             (byte) 0x81, (byte) 0x06, //       Input (Data, Variable, Relative)
             (byte) 0xC0,              //    End Collection
+            (byte) 0xC0,              // End Collection
+/*
+            (byte) 0x05, (byte) 0x01, // Usage page (Generic Desktop)
+            (byte) 0x09, (byte) 0x06, // Usage (Keyboard)
+            (byte) 0xA1, (byte) 0x01, // Collection (Application)
+            (byte) 0x85, (byte) 0x02, //    Report ID 02
+            (byte) 0x05, (byte) 0x07, //       Usage page (Key Codes)
+            (byte) 0x19, (byte) 0xE0, //       Usage minimum (224)
+            (byte) 0x29, (byte) 0xE7, //       Usage maximum (231)
+            (byte) 0x15, (byte) 0x00, //       Logical minimum (0)
+            (byte) 0x25, (byte) 0x01, //       Logical maximum (1)
+            (byte) 0x75, (byte) 0x01, //       Report size (1)
+            (byte) 0x95, (byte) 0x08, //       Report count (8)
+            (byte) 0x81, (byte) 0x02, //       Input (Data, Variable, Absolute) ; Modifier byte
+            (byte) 0x75, (byte) 0x08, //       Report size (8)
+            (byte) 0x95, (byte) 0x01, //       Report count (1)
+            (byte) 0x81, (byte) 0x01, //       Input (Constant)                 ; Reserved byte
+            (byte) 0x75, (byte) 0x08, //       Report size (8)
+            (byte) 0x95, (byte) 0x06, //       Report count (6)
+            (byte) 0x15, (byte) 0x00, //       Logical Minimum (0)
+            (byte) 0x25, (byte) 0x65, //       Logical Maximum (101)
+            (byte) 0x05, (byte) 0x07, //       Usage page (Key Codes)
+            (byte) 0x19, (byte) 0x00, //       Usage Minimum (0)
+            (byte) 0x29, (byte) 0x65, //       Usage Maximum (101)
+            (byte) 0x81, (byte) 0x00, //       Input (Data, Array)              ; Key array (6 keys)
             (byte) 0xC0               // End Collection
+*/
     };
 
     private static final byte[] REPORT_REF_MOUSE = { (byte) 0, (byte) 1 };
@@ -178,7 +207,7 @@ class BluetoothGattHIDService extends BluetoothGattService {
     }
 
     BluetoothGattCharacteristic getNotification() {
-        int mode = mProtocolMode.getIntValue(17, 0);
+        int mode = mProtocolMode.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         mMouseInputReport.setValue(mBootMouseReport.getRawValue());
         if (mode == PROTOCOL_MODE_BOOT && isNotifEnabled(mBootMouseInputReportConfig)) {
             return mBootMouseInputReport;
